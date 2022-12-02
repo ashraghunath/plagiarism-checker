@@ -16,21 +16,59 @@ public class s40192120_detector {
 //            System.exit(1);
 //        }
 
-        String file1 = "/Users/ashwinraghunath/Documents/Fall_2022/COMP 6651 ADT notes /Project/plagiarism-detection/data/okay01/1.txt";
-        String file2 = "/Users/ashwinraghunath/Documents/Fall_2022/COMP 6651 ADT notes /Project/plagiarism-detection/data/okay01/2.txt";
+
+        String okayfilePrefix = "/Users/ashwinraghunath/Documents/Fall_2022/COMP 6651 ADT notes /Project/plagiarism-detection/data/okay0";
+        String plagiarismPrefix = "/Users/ashwinraghunath/Documents/Fall_2022/COMP 6651 ADT notes /Project/plagiarism-detection/data/plagiarism0";
+        String file1Suffix = "/1.txt";
+
+        String file2Suffix = "/2.txt";
+
+        for(int i=1; i<=6; i++)
+        {
+            String file1 = okayfilePrefix+i+file1Suffix;
+            String file2 = okayfilePrefix+i+file2Suffix;
+
 
 //         Read the two text files line by line
 //        BufferedReader br1 = new BufferedReader(new FileReader(args[0]));
 //        BufferedReader br2 = new BufferedReader(new FileReader(args[1]));
 
-        BufferedReader br1 = new BufferedReader(new FileReader(file1));
-        BufferedReader br2 = new BufferedReader(new FileReader(file2));
+            BufferedReader br1 = new BufferedReader(new FileReader(file1));
+            BufferedReader br2 = new BufferedReader(new FileReader(file2));
 
-        // Calculate the plagiarism using the LCS algorithm
-        double plagiarism = calculatePlagiarism(br1, br2);
+            // Calculate the plagiarism using the LCS algorithm
+            double plagiarism = calculatePlagiarism(br1, br2);
 
-        // Print the plagiarism percentage
-        System.out.println("Plagiarism: " + plagiarism + "%");
+            // Print the plagiarism percentage
+            System.out.println("okay0"+i);
+            System.out.println("Plagiarism: " + plagiarism + "%");
+
+        }
+
+        System.out.println("\n\n");
+
+        for(int i=1; i<=7; i++)
+        {
+            String file1 = plagiarismPrefix+i+file1Suffix;
+            String file2 = plagiarismPrefix+i+file2Suffix;
+
+
+//         Read the two text files line by line
+//        BufferedReader br1 = new BufferedReader(new FileReader(args[0]));
+//        BufferedReader br2 = new BufferedReader(new FileReader(args[1]));
+
+            BufferedReader br1 = new BufferedReader(new FileReader(file1));
+            BufferedReader br2 = new BufferedReader(new FileReader(file2));
+
+            // Calculate the plagiarism using the LCS algorithm
+            double plagiarism = calculatePlagiarism(br1, br2);
+
+            // Print the plagiarism percentage
+            System.out.println("plagiarism0"+i);
+            System.out.println("Plagiarism: " + plagiarism + "%");
+
+        }
+
     }
 
     private static String readFile(String fileName) throws IOException {
@@ -110,7 +148,11 @@ public class s40192120_detector {
             for (int j = 1; j <= words2.length; j++) {
                 // If the current words are the same, add one to the length of the LCS
                 // of the previous subproblem
-                if (words1[i - 1].equals(words2[j - 1])) {
+
+                int distance = editdistance(words1[i - 1], words2[j - 1]);
+
+                // If the distance is less than or equal to a certain threshold, consider the words to be a match
+                if (distance <= 1) {
                     lcsLengths[i][j] = lcsLengths[i - 1][j - 1] + 1;
                 } else {
                     // Otherwise, take the maximum of the lengths of the LCSes of the
@@ -122,5 +164,34 @@ public class s40192120_detector {
 
         // Return the length of the LCS of the whole problem
         return lcsLengths[words1.length][words2.length];
+    }
+
+    public static int editdistance(String word1, String word2) {
+        // Create a matrix to store the distances
+        int[][] distances = new int[word1.length() + 1][word2.length() + 1];
+
+        // Initialize the first row and column
+        for (int i = 0; i <= word1.length(); i++) {
+            distances[i][0] = i;
+        }
+        for (int j = 0; j <= word2.length(); j++) {
+            distances[0][j] = j;
+        }
+
+        // Iterate over the matrix and fill in the distances
+        for (int i = 1; i <= word1.length(); i++) {
+            for (int j = 1; j <= word2.length(); j++) {
+                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                    // If the characters are the same, the distance is the same as the distance for the previous characters
+                    distances[i][j] = distances[i - 1][j - 1];
+                } else {
+                    // Otherwise, the distance is the minimum of the three possible operations (insertion, deletion, substitution) plus 1
+                    distances[i][j] = Math.min(distances[i - 1][j], Math.min(distances[i][j - 1], distances[i - 1][j - 1])) + 1;
+                }
+            }
+        }
+
+        // The distance is the value in the bottom-right cell of the matrix
+        return distances[word1.length()][word2.length()];
     }
 }
