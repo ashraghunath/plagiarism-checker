@@ -8,8 +8,7 @@ import java.util.regex.Pattern;
 
 public class s40192120_detector {
 
-    private static final double LCSTHRESHOLD = 70;
-    private static final double COSINETHRESHOLD = 70;
+    private static final double THRESHHOLD = 70;
 
     public static void main(String[] args) throws IOException {
 
@@ -38,15 +37,22 @@ public class s40192120_detector {
 
     }
 
+    /**
+     * Calculates the plagiarism value using cosine similarity
+     * @param file1 first text file
+     * @param file2 second text file
+     * @return 1 if plagiarized, 0 otherwise
+     * @throws IOException if no file found
+     */
     private static int runCosine(File file1, File file2) throws IOException {
 
-        Map<String, Integer> file1Words = readFile(file1);
+        Map<String, Integer> file1Words = readFileForCosine(file1);
         Map<String, Integer> references = countReferences(file1Words);
 
-        Map<String, Integer> file2Words = readFile(file2);
+        Map<String, Integer> file2Words = readFileForCosine(file2);
         Map<String, Integer> referencesFound = countReferences(file2Words);
 
-        Map result = new HashMap(references);
+        Map<String, Integer> result = new HashMap<>(references);
         result.keySet().retainAll(referencesFound.keySet());
         int referencesRemoved = result.size();
         references.keySet().removeAll(referencesFound.keySet());
@@ -57,12 +63,18 @@ public class s40192120_detector {
         similarity = similarity * 100;
         similarity += adjustment;
 
-        if (Math.round(similarity) >= COSINETHRESHOLD)
+        if (Math.round(similarity) >= THRESHHOLD)
             return 1;
         else
             return 0;
     }
 
+    /**
+     * Runs the cosine similarity algorithm
+     * @param file1Words first text file
+     * @param file2Words second text file
+     * @return value of cosine similarity
+     */
     private static double cosineSimilarity(Map<String, Integer> file1Words, Map<String, Integer> file2Words) {
         // calculate the dot product
         int dotProduct = 0;
@@ -90,6 +102,11 @@ public class s40192120_detector {
         return dotProduct / (magnitude1 * magnitude2);
     }
 
+    /**
+     * Counts the references mentioned in the file
+     * @param map wordcount of the file
+     * @return stored references
+     */
     private static Map<String, Integer> countReferences(Map<String, Integer> map) {
 
         Pattern yearPattern = Pattern.compile("\\d{4}|http.*");
@@ -115,7 +132,13 @@ public class s40192120_detector {
         return copy;
     }
 
-    private static Map<String, Integer> readFile(File file) throws IOException {
+    /**
+     * Calculates the wordcount in the file
+     * @param file input file
+     * @return map containing wordcount
+     * @throws IOException if no file found
+     */
+    private static Map<String, Integer> readFileForCosine(File file) throws IOException {
         Map<String, Integer> frequency = new HashMap<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -133,6 +156,12 @@ public class s40192120_detector {
 
     }
 
+    /**
+     * Identifies if text file contains cpp or java code
+     * @param file input file
+     * @return true if file contains code, 0 otherwise
+     * @throws IOException if no file found
+     */
     private static boolean containsCode(File file) throws IOException {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
@@ -152,13 +181,20 @@ public class s40192120_detector {
         }
     }
 
+    /**
+     * Calculates the plagiarism value using LCS
+     * @param file1 first input file
+     * @param file2 second input file
+     * @return 1 if plagiarized, 0 otherwise
+     * @throws IOException
+     */
     private static int runLCS(File file1, File file2) throws IOException {
 
         BufferedReader br1 = new BufferedReader(new FileReader(file1));
         BufferedReader br2 = new BufferedReader(new FileReader(file2));
 
-        String[] words1 = readWordsUsingBuffer(br1);
-        String[] words2 = readWordsUsingBuffer(br2);
+        String[] words1 = readWordsForLCS(br1);
+        String[] words2 = readWordsForLCS(br2);
 
         for (int i = 0; i < words1.length; i++) {
             words1[i] = words1[i].toLowerCase();
@@ -175,13 +211,19 @@ public class s40192120_detector {
 
         double plagiarismPercentage = plagiarismScore * 100;
 
-        if (Math.round(plagiarismPercentage) >= LCSTHRESHOLD)
+        if (Math.round(plagiarismPercentage) >= THRESHHOLD)
             return 1;
         else
             return 0;
     }
 
-    private static String[] readWordsUsingBuffer(BufferedReader br) throws IOException {
+    /**
+     * Reads words from the text file
+     * @param br bufferedReader of file to be read
+     * @return words in the text
+     * @throws IOException if no file is found
+     */
+    private static String[] readWordsForLCS(BufferedReader br) throws IOException {
         Pattern wordPattern = Pattern.compile("\\b\\w+\\b");
         Set<String> words = new LinkedHashSet<>();
         String line = br.readLine();
@@ -199,6 +241,12 @@ public class s40192120_detector {
         return words.toArray(new String[0]);
     }
 
+    /**
+     * Runs the LCS algorithm
+     * @param words1 words of file1
+     * @param words2 words of file2
+     * @return LCS value
+     */
     private static int lcs(String[] words1, String[] words2) {
         int[][] lcsLengths = new int[words1.length + 1][words2.length + 1];
 
@@ -217,6 +265,12 @@ public class s40192120_detector {
         return lcsLengths[words1.length][words2.length];
     }
 
+    /**
+     * Calculates adjustment value for correct references mentioned
+     * @param remainingReferences number of references not given credit
+     * @param referencesRemoved number of references credited
+     * @return value to add for adjustment of plagiarism percentage
+     */
     private static double adjustReferences(int remainingReferences, int referencesRemoved) {
 
         double adjustmentValue = remainingReferences * 5;
